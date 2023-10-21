@@ -1,15 +1,17 @@
 #include <stddef.h>
 #include <assert.h>
+#include <stdlib.h>
+#include <string.h>
 #include "symtable.h"
 
 struct SymTableNode {
-  const char *pcKey;
-  const void *pvValue;
+  char *pcKey;
+  void *pvValue;
   struct SymTableNode *psNextNode;
 };
 
 struct SymTable {
-  SymTableNode_T *psaNodeChains[509];
+  struct SymTableNode *psaNodeChains[509];
   size_t uLength;
 };
 
@@ -31,13 +33,13 @@ static size_t SymTable_hash(const char *pcKey, size_t uBucketCount)
 
 SymTable_T SymTable_new(void) {
   SymTable_T oSymTable;
+  int i;
 
   oSymTable = (SymTable_T) malloc(sizeof(struct SymTable));
   if (oSymTable == NULL) {
     return NULL;
   }
 
-  int i;
   for (i = 0; i < 509; i++) {
     oSymTable->psaNodeChains[i] = NULL;
   }
@@ -48,8 +50,8 @@ SymTable_T SymTable_new(void) {
 }
 
 void SymTable_free(SymTable_T oSymTable) {
-  SymTableNode *psCurrentNode;
-  SymTableNode *psNextNode;
+  struct SymTableNode *psCurrentNode;
+  struct SymTableNode *psNextNode;
   int i;
 
   assert(oSymTable != NULL);
@@ -78,8 +80,11 @@ int SymTable_put(SymTable_T oSymTable,
   size_t uHashValue;
   char *pcKeyCopy;
 
-  SymTableNode *psCurrentNode;
-  SymTableNode *psNextNode;
+  struct SymTableNode *psCurrentNode;
+  struct SymTableNode *psNextNode;
+
+  struct SymTableNode *psNewNode;
+  struct SymTableNode *psPreviousFirst;
 
   assert(oSymTable != NULL);
 
@@ -93,12 +98,8 @@ int SymTable_put(SymTable_T oSymTable,
     psNextNode = psCurrentNode->psNextNode;
   }
 
-  SymTableNode *psNewNode;
-  SymTableNode *psPreviousFirst;
-  char *pcKeyCopy;
-
-  psNewNode = (struct SymTableNode*) malloc(size_of(struct SymTableNode));
-  pcKeyCopy = (char*) malloc(size_of(char) * (strlen(pcKey) + 1)); 
+  psNewNode = (struct SymTableNode*) malloc(sizeof(struct SymTableNode));
+  pcKeyCopy = (char*) malloc(sizeof(char) * (strlen(pcKey) + 1)); 
   if (psNewNode == NULL || pcKeyCopy == NULL)
     return 0;
   
@@ -108,7 +109,7 @@ int SymTable_put(SymTable_T oSymTable,
   oSymTable->psaNodeChains[uHashValue] = psNewNode;
   psNewNode->psNextNode = psPreviousFirst;
   psNewNode->pcKey = pcKeyCopy;
-  psNewNode->pvValue = pvValue;
+  psNewNode->pvValue = (void*)pvValue;
 
   oSymTable->uLength++;
 
@@ -119,10 +120,10 @@ void *SymTable_replace(SymTable_T oSymTable,
   const char *pcKey, const void *pvValue) 
 {
   size_t uHashValue;
-  char *pcKeyCopy;
 
-  SymTableNode *psCurrentNode;
-  SymTableNode *psNextNode;
+  struct SymTableNode *psCurrentNode;
+  struct SymTableNode *psNextNode;
+  void *pvOldValue;
 
   assert(oSymTable != NULL);
 
@@ -133,7 +134,7 @@ void *SymTable_replace(SymTable_T oSymTable,
   {
     if (strcmp(psCurrentNode->pcKey, pcKey) == 0) {
       pvOldValue = psCurrentNode->pvValue;
-      psCurrentNode-pvValue = pvValue;
+      psCurrentNode->pvValue = (void*)pvValue;
       return pvOldValue;
     }
     psNextNode = psCurrentNode->psNextNode;
@@ -143,10 +144,9 @@ void *SymTable_replace(SymTable_T oSymTable,
 
 int SymTable_contains(SymTable_T oSymTable, const char *pcKey) {
   size_t uHashValue;
-  char *pcKeyCopy;
 
-  SymTableNode *psCurrentNode;
-  SymTableNode *psNextNode;
+  struct SymTableNode *psCurrentNode;
+  struct SymTableNode *psNextNode;
 
   assert(oSymTable != NULL);
 
@@ -164,8 +164,8 @@ int SymTable_contains(SymTable_T oSymTable, const char *pcKey) {
 
 void *SymTable_get(SymTable_T oSymTable, const char *pcKey) {
   size_t uHashValue;
-  SymTableNode *psCurrentNode;
-  SymTableNode *psNextNode;
+  struct SymTableNode *psCurrentNode;
+  struct SymTableNode *psNextNode;
 
   assert(oSymTable != NULL);
 
@@ -183,9 +183,8 @@ void *SymTable_get(SymTable_T oSymTable, const char *pcKey) {
 
 void *SymTable_remove(SymTable_T oSymTable, const char *pcKey) {
   size_t uHashValue;
-  SymTableNode *psPreviousNode;
-  SymTableNode *psCurrentNode;
-  SymTableNode *psNextNode;
+  struct SymTableNode *psPreviousNode;
+  struct SymTableNode *psCurrentNode;
   void *pvReturnValue;
 
   assert(oSymTable != NULL);
@@ -195,10 +194,11 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey) {
   if (psCurrentNode == NULL)
     return NULL;
   else if (strcmp(psCurrentNode->pcKey, pcKey) == 0) {
-    oSymTable->psFirstNode = psCurrentNode->psNextNode;
+    oSymTable->psaNodeChains[uHashValue] = psCurrentNode->psNextNode;
     pvReturnValue = psCurrentNode->pvValue;
     free(psCurrentNode->pcKey);
     free(psCurrentNode);
+    oSymTable->uLength--;
     return pvReturnValue;
   }
 
@@ -225,8 +225,8 @@ void SymTable_map(SymTable_T oSymTable,
   void (*pfApply)(const char *pcKey, void *pvValue, void *pvExtra),
   const void *pvExtra)
 {
-  SymTableNode *psCurrentNode;
-  SymTableNode *psNextNode;
+  struct SymTableNode *psCurrentNode;
+  struct SymTableNode *psNextNode;
   int i;
 
   assert(oSymTable != NULL);
@@ -236,7 +236,9 @@ void SymTable_map(SymTable_T oSymTable,
       psCurrentNode != NULL;
       psCurrentNode = psNextNode)
     {
-      pfApply(psCurrentNode->pcKey, psCurrentNode->pvValue, pvExtra);
+      pfApply(psCurrentNode->pcKey, 
+              psCurrentNode->pvValue, 
+              (void*)pvExtra);
       psNextNode = psCurrentNode->psNextNode;
     }
   }
