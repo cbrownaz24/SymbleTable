@@ -58,14 +58,8 @@ int SymTable_put(SymTable_T oSymTable,
 
   assert(oSymTable != NULL);
 
-  for (psCurrentNode = oSymTable->psFirstNode;
-    psCurrentNode != NULL;
-    psCurrentNode = psNextNode)
-  {
-    if (strcmp(psCurrentNode->pcKey, pcKey) == 0)
-      return 0;
-    psNextNode = psCurrentNode->psNextNode;
-  }
+  if (SymTable_contains(pcKey) == 1)
+    return 0;
 
   psNewNode = (struct SymTableNode*)malloc(sizeof(struct SymTableNode));
   pcKeyCopy = (char*) malloc(sizeof(char) * (strlen(pcKey) + 1)); 
