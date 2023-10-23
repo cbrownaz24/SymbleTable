@@ -288,35 +288,28 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey) {
   uHashValue = SymTable_hash(pcKey, 
                             oSymTable->puBucketSizes[iBucketSizeIndex]);
   psCurrentNode = oSymTable->psaNodeChains[uHashValue];
+
+  for (psCurrentNode = oSymTable->psaNodeChains[uHashValue], 
+       psPreviousNode = NULL; 
+       psCurrentNode != NULL && 
+       strcmp(psCurrentNode->pcKey, pcKey) != 0;
+       psPreviousNode = psCurrentNode, 
+       psCurrentNode = psCurrentNode->psNextNode);
+
   if (psCurrentNode == NULL)
     return NULL;
-  else if (strcmp(psCurrentNode->pcKey, pcKey) == 0) {
+  else if (psPreviousNode == NULL) {
     oSymTable->psaNodeChains[uHashValue] = psCurrentNode->psNextNode;
     pvReturnValue = psCurrentNode->pvValue;
-    free(psCurrentNode->pcKey);
-    free(psCurrentNode);
-    oSymTable->uLength--;
-
-    return pvReturnValue;
+  } else {
+    psPreviousNode->psNextNode = psCurrentNode->psNextNode;
+    pvReturnValue = psCurrentNode->pvValue;
   }
 
-  psPreviousNode = psCurrentNode;
-  psCurrentNode = psCurrentNode->psNextNode;
-  while (psCurrentNode != NULL) {
-    if (strcmp(psCurrentNode->pcKey, pcKey) == 0) {
-      psPreviousNode->psNextNode = psCurrentNode->psNextNode;
-      pvReturnValue = psCurrentNode->pvValue;
-      free(psCurrentNode->pcKey);
-      free(psCurrentNode);
-
-      oSymTable->uLength--;
-
-      return pvReturnValue;
-    }
-    psPreviousNode = psCurrentNode;
-    psCurrentNode = psCurrentNode->psNextNode;
-  }
-  return NULL;
+  free(psCurrentNode->pcKey);
+  free(psCurrentNode);
+  oSymTable->uLength--;
+  return pvReturnValue;
 }
 
 /*--------------------------------------------------------------------*/
