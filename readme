@@ -21,8 +21,6 @@ and edit it as appropriate.
 
     The course's textbooks.
 
-    The man pages on the armlab cluster.
-
     The course's current staff members outside of class time through Ed.
 
 ------------------------------------------------------------------------
@@ -59,15 +57,36 @@ disagreements with them? Copy the splint warnings here, and express your
 disagreement after each warning. If there are no warnings, then write
 "None."
 
+    Warning: "symtablelist.c: (in function SymTable_map)
+        symtablelist.c:338:5: Statement has no effect: 
+        pfApply(psCurren... Statement has no visible effect --- 
+        no values are modified. (Use -noeffect to inhibit 
+        warning)"
 
-
+    I disagree with this warning because we do not know the return type
+    of pfApply, so we can't necessarily change values based on its 
+    return type. Also, in the case where pfApply prints all the 
+    key/value pairs, it actually doesn't have a return value at all 
+    (void). 
 ------------------------------------------------------------------------
 What warnings does critTer generate on symtablelist.c, and what are your
 disagreements with them? Copy the critTer warnings here, and express
 your disagreement after each warning. If there are no warnings, then
 write "None."
 
+        Warnings: symtablelist.c: line 102: medium priority:
+                  Do you want to validate 'pvValue' through an assert?
 
+                  symtablelist.c: line 156: medium priority:
+                  Do you want to validate 'pvValue' through an assert?
+
+                  symtablelist.c: line 321: medium priority:
+                  Do you want to validate 'pvExtra' through an assert?
+
+    I disagree with these warnings because the client should be allowed
+    to insert key/value pairs where the value is NULL; and they should 
+    be allowed to map functions where pvExtra is NULL, per implied API
+    specifications in testsymtable.c.
 
 ------------------------------------------------------------------------
 What warnings does splint generate on symtablehash.c, and what are your
@@ -75,7 +94,15 @@ disagreements with them? Copy the splint warnings here, and express your
 disagreement after each warning. If there are no warnings, then write
 "None."
 
+    Warning: symtablehash.c:544:7: Statement has no effect: 
+             pfApply(psCurren... Statement has no visible effect --- 
+             no values are modified. (Use -noeffect to inhibit warning)
 
+    I disagree with this warning because we do not know the return type
+    of pfApply, so we can't necessarily change values based on its 
+    return type. Also, in the case where pfApply prints all the 
+    key/value pairs, it actually doesn't have a return value at all 
+    (void). 
 
 ------------------------------------------------------------------------
 What warnings does critTer generate on symtablehash.c, and what are your
@@ -83,8 +110,28 @@ disagreements with them? Copy the critTer warnings here, and express
 your disagreement after each warning. If there are no warnings, then
 write "None."
 
+        Warnings: symtablehash.c: line 255: medium priority:
+                  Do you want to validate 'pvValue' through an assert?
+     
+                  symtablehash.c: line 327: medium priority:
+                  Do you want to validate 'pvValue' through an assert?
+     
+                  symtablehash.c: line 520: medium priority:
+                  Do you want to validate 'pvExtra' through an assert?
 
+                  symtablehash.c: line 548: low priority: 
+                  A source code file should contain fewer than 500 
+                  lines; this file contains 549 lines
 
+    I disagree with these warnings because the client should be allowed
+    to insert key/value pairs where the value is NULL; and they should 
+    be allowed to map functions where pvExtra is NULL, per implied API
+    specifications in testsymtable.c. Concerning the length of the file,
+    most of these extra lines can be attributed to my helper functions
+    and global variables. Though these may add more lines to the lengthy
+    program, it is best style to have these helper functions be included
+    in the program file since they are ONLY used in this scope. As well
+    it adds more clarity to what everything is doing.
 ------------------------------------------------------------------------
 What are the CPU times reported by testsymtable.c with binding counts
 50, 500, 5000, 50000, and 500000 using (1) your linked list
