@@ -76,6 +76,9 @@ static size_t SymTable_hash(const char *pcKey, size_t uBucketCount)
 
 /*--------------------------------------------------------------------*/
 
+/* Resizes the hash table associated with the SymTable ADT referenced 
+   by oSymTable. If the hash table is already maximally sized (maxed 
+   number of buckets), then no resize will occur. */
 static void SymTable_resizeIfNecessary(SymTable_T oSymTable) {
   /* The resized buckets array. */
   struct SymTableNode **psNewBucketList;
@@ -83,11 +86,9 @@ static void SymTable_resizeIfNecessary(SymTable_T oSymTable) {
   /* The current bucket count and new/expanded bucket count. */
   size_t uCurrentBucketCount, uNewBucketCount;
 
-  /* The current node being rehashed into new buckets array. */
-  struct SymTableNode *psCurrentNode;
-
-  /* The next node to be rehashed into new buckets array.*/
-  struct SymTableNode *psNextNode;
+  /* The current node being rehashed into new buckets array and the next
+     node to be rehashed into new buckets array. */
+  struct SymTableNode *psCurrentNode, *psNextNode;
 
   /* The new hash index of the current node. */
   size_t uHashValue;
@@ -199,11 +200,8 @@ SymTable_T SymTable_new(void) {
 /*--------------------------------------------------------------------*/
 
 void SymTable_free(SymTable_T oSymTable) {
-  /* Reference to current node to free. */
-  struct SymTableNode *psCurrentNode;
-
-  /* Reference to the next node to free. */
-  struct SymTableNode *psNextNode;
+  /* Reference to current node to free and to the next node to free. */
+  struct SymTableNode *psCurrentNode, *psNextNode;
 
   /* Record the current number of buckets in SymTable. */
   size_t iBucketSizeIndex;
