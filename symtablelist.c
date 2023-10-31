@@ -77,7 +77,7 @@ void SymTable_free(SymTable_T oSymTable) {
     /* Update to the next node in list. */
     psNextNode = psCurrentNode->psNextNode;
 
-    /* Free the defnensive copy of the the current node's key and free
+    /* Free the defensive copy of the the current node's key and free
        the node itself. */
     free(psCurrentNode->pcKey);
     free(psCurrentNode);
@@ -90,7 +90,9 @@ void SymTable_free(SymTable_T oSymTable) {
 /*--------------------------------------------------------------------*/
 
 size_t SymTable_getLength(SymTable_T oSymTable) {
-  /* Return the uLength field tracked by the "manager" SymTable 
+  assert(oSymTable != NULL);
+
+  /* Return the length field tracked by the "manager" SymTable 
      structure. */
   return oSymTable->uLength;
 }
@@ -117,7 +119,8 @@ int SymTable_put(SymTable_T oSymTable, const char *pcKey,
   /* Allocate memory for new node, but store/pass by reference. */
   psNewNode = (struct SymTableNode*)malloc(sizeof(struct SymTableNode));
 
-  /* Check that memory allocation for new node was successful. */
+  /* Check that memory allocation for new node was successful. If not,
+     there's nothing to put. */
   if (psNewNode == NULL) 
     return 0;
 
@@ -126,7 +129,7 @@ int SymTable_put(SymTable_T oSymTable, const char *pcKey,
   pcKeyCopy = (char *) malloc(sizeof(char) * (strlen(pcKey) + 1)); 
 
   /* Check that memory allocation for defensie key copy was 
-     successful. */
+     successful. If not, can't put in the new node. */
   if (pcKeyCopy == NULL) {
     free(psNewNode);
     return 0;
@@ -135,7 +138,7 @@ int SymTable_put(SymTable_T oSymTable, const char *pcKey,
   /* Make the defensive copy of key. */
   pcKeyCopy = strcpy(pcKeyCopy, pcKey);
 
-  /* Initialize values of new node. */
+  /* Initialize key/value of new node. */
   psNewNode->pcKey = pcKeyCopy;
   psNewNode->pvValue = (void *) pvValue;
 
@@ -146,6 +149,7 @@ int SymTable_put(SymTable_T oSymTable, const char *pcKey,
   /* Update the size of the SymTable. */
   oSymTable->uLength++;
 
+  /* Put was successful. */
   return 1;
 }
 
@@ -157,9 +161,6 @@ void *SymTable_replace(SymTable_T oSymTable,
   /* Current node being compared to target. */
   struct SymTableNode *psCurrentNode;
 
-  /* Track the next node in linked list to look at. */
-  struct SymTableNode *psNextNode;
-
   /* Store the binding's previous value to return it. */
   void *pvOldValue;
 
@@ -170,7 +171,7 @@ void *SymTable_replace(SymTable_T oSymTable,
     list reached. */
   for (psCurrentNode = oSymTable->psFirstNode;
     psCurrentNode != NULL;
-    psCurrentNode = psNextNode)
+    psCurrentNode = psCurrentNode->psNextNode)
   {
     /* Target is found when keys match. */
     if (strcmp(psCurrentNode->pcKey, pcKey) == 0) {
@@ -184,9 +185,6 @@ void *SymTable_replace(SymTable_T oSymTable,
       /* Function was successful, return binding's old value. */
       return pvOldValue;
     }
-
-    /* Keep searching through linked list by jumping to next node. */
-    psNextNode = psCurrentNode->psNextNode;
   }
 
   /* Function was unsuccessful (target doesn't exist in SymTable). */
@@ -199,9 +197,6 @@ int SymTable_contains(SymTable_T oSymTable, const char *pcKey) {
   /* Current node being compared to target. */
   struct SymTableNode *psCurrentNode;
 
-  /* Track the next node in linked list to look at. */
-  struct SymTableNode *psNextNode;
-
   assert(oSymTable != NULL);
   assert(pcKey != NULL);
 
@@ -209,15 +204,12 @@ int SymTable_contains(SymTable_T oSymTable, const char *pcKey) {
     list reached. */
   for (psCurrentNode = oSymTable->psFirstNode;
     psCurrentNode != NULL;
-    psCurrentNode = psNextNode)
+    psCurrentNode = psCurrentNode->psNextNode)
   {
     /* Target is found when keys match. */
     if (strcmp(psCurrentNode->pcKey, pcKey) == 0)
       /* Successful target hit, return TRUE (1). */
       return 1;
-
-    /* Keep searching through linked list by jumping to next node. */
-    psNextNode = psCurrentNode->psNextNode;
   }
 
   /* Target was not found before the end of linked list, return FALSE 
@@ -288,7 +280,7 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey) {
      start of the linked list. */
   else if (psPreviousNode == NULL) {
     /* Remove target node by replacing the first node in the list with 
-       the next node after the target node. */
+       the second node in list. */
     oSymTable->psFirstNode = psCurrentNode->psNextNode;
   } 
   /* The target node was in the middle of the list. */
@@ -301,7 +293,7 @@ void *SymTable_remove(SymTable_T oSymTable, const char *pcKey) {
   /* Update the return value to be the target binding's value. */
   pvReturnValue = psCurrentNode->pvValue;
 
-  /* Free the target node's defnesive key copy, then free the target 
+  /* Free the target node's defensive key copy, then free the target 
      node itself. */
   free(psCurrentNode->pcKey);
   free(psCurrentNode);
@@ -322,9 +314,6 @@ void SymTable_map(SymTable_T oSymTable,
   /* The current binding to apply pfApply to. */
   struct SymTableNode *psCurrentNode;
 
-  /* Track the next node in the linked list to apply pfApply to. */
-  struct SymTableNode *psNextNode;
-
   assert(oSymTable != NULL);
   assert(pfApply != NULL);
 
@@ -332,13 +321,10 @@ void SymTable_map(SymTable_T oSymTable,
     key/value with pvExtra. */
   for (psCurrentNode = oSymTable->psFirstNode;
        psCurrentNode != NULL;
-       psCurrentNode = psNextNode)
+       psCurrentNode = psCurrentNode->psNextNode)
   {
     /* Apply pfApply to the current node. */
     pfApply(psCurrentNode->pcKey, psCurrentNode->pvValue, 
       (void * ) pvExtra);
-    
-    /* Jump to next node in linked list. */
-    psNextNode = psCurrentNode->psNextNode;
   }
 }
