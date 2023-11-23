@@ -1,3 +1,3 @@
-# Assignment 3 - SymTable
+# SymTable
 
-This repository contains the provided files for Assignment 3.
+This project gives two methods (linear linked list and expandable hash table) for implementing a SymTable ADT.
